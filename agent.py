@@ -92,9 +92,57 @@ def run_agent(query: str, wardrobe: dict) -> dict:
     Before writing code, complete the Planning Loop and State Management sections
     of planning.md — your implementation should match what you described there.
     """
-    # TODO: implement the planning loop
+    import re
+
+    # Step 1
     session = _new_session(query, wardrobe)
-    session["error"] = "Planning loop not yet implemented."
+
+    # Step 2: parse query with regex
+    q = query
+
+    price_match = re.search(r'under\s*\$?(\d+(?:\.\d+)?)', q, re.IGNORECASE) or \
+                  re.search(r'\$?(\d+(?:\.\d+)?)\s+or\s+less', q, re.IGNORECASE)
+    max_price = float(price_match.group(1)) if price_match else None
+
+    size_match = re.search(r'\b(XXS|XS|S/M|M/L|S|M|L|XL|XXL|W\d+|one\s+size)\b', q, re.IGNORECASE)
+    size = size_match.group(1) if size_match else None
+
+    # strip price and size fragments to get the description
+    description = q
+    if price_match:
+        description = description[:price_match.start()] + description[price_match.end():]
+    if size_match:
+        description = description[:size_match.start()] + description[size_match.end():]
+    description = re.sub(r'\bsize\b', '', description, flags=re.IGNORECASE).strip(' ,.')
+
+    session["parsed"] = {"description": description, "size": size, "max_price": max_price}
+
+    # Step 3: search
+    session["search_results"] = search_listings(description, size, max_price)
+    if not session["search_results"]:
+        session["error"] = (
+            "No listings found matching your search. "
+            "Try broader keywords, a higher budget, or skip the size filter."
+        )
+        return session
+
+    # Step 4: select top result
+    session["selected_item"] = session["search_results"][0]
+
+    # Step 5: suggest outfit
+    try:
+        outfit = suggest_outfit(session["selected_item"], session["wardrobe"])
+    except Exception:
+        outfit = ""
+    if not outfit or not outfit.strip():
+        session["error"] = "Outfit suggestion failed. Please try again."
+        return session
+    session["outfit_suggestion"] = outfit
+
+    # Step 6: create fit card (graceful degradation — no early exit)
+    session["fit_card"] = create_fit_card(session["outfit_suggestion"], session["selected_item"])
+
+    # Step 7: return
     return session
 
 
