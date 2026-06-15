@@ -60,7 +60,6 @@ def search_listings(
         id, title, description, category, style_tags (list), size,
         condition, price (float), colors (list), brand, platform
 
-    TODO:
         1. Load all listings with load_listings().
         2. Filter by max_price and size (if provided).
         3. Score each remaining listing by keyword overlap with `description`.
@@ -113,7 +112,6 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
         If the wardrobe is empty, offer general styling advice for the item
         rather than raising an exception or returning an empty string.
 
-    TODO:
         1. Check whether wardrobe['items'] is empty.
         2. If empty: call the LLM with a prompt for general styling ideas
            (what kinds of items pair well, what vibe it suits, etc.).
@@ -183,7 +181,6 @@ def create_fit_card(outfit: str, new_item: dict) -> str:
     - Capture the outfit vibe in specific terms
     - Sound different each time for different inputs (use higher LLM temperature)
 
-    TODO:
         1. Guard against an empty or whitespace-only outfit string.
         2. Build a prompt that gives the LLM the item details and the outfit,
            and asks for a caption matching the style guidelines above.
